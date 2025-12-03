@@ -1,6 +1,8 @@
 pipeline {
   agent none
+
   stages {
+
     stage('Back-end') {
       agent {
         docker { image 'maven:3.8.1-adoptopenjdk-11' }
@@ -9,6 +11,7 @@ pipeline {
         sh 'mvn --version'
       }
     }
+
     stage('Front-end') {
       agent {
         docker { image 'node:16-alpine' }
@@ -17,5 +20,24 @@ pipeline {
         sh 'node --version'
       }
     }
+
+    stage('Database') {
+      agent {
+        docker {
+          image 'mysql:8'         // MySQL image
+          args '-e MYSQL_ROOT_PASSWORD=root -p 3306:3306'
+          // Adds MySQL root password + exposes port
+        }
+      }
+      steps {
+        // MySQL takes ~10 seconds to initialize
+        sh 'echo "Waiting for MySQL to start..."'
+        sh 'sleep 20'
+
+        // Run an SQL query safely
+        sh 'mysql -h 127.0.0.1 -uroot -proot -e "SELECT VERSION();"'
+      }
+    }
+
   }
 }
